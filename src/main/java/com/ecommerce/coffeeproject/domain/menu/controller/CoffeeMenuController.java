@@ -1,6 +1,7 @@
 package com.ecommerce.coffeeproject.domain.menu.controller;
 
 import com.ecommerce.coffeeproject.domain.menu.dto.CoffeeMenuResponse;
+import com.ecommerce.coffeeproject.domain.menu.dto.PopularMenuResponse;
 import com.ecommerce.coffeeproject.domain.menu.service.CoffeeMenuService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,5 +20,10 @@ public class CoffeeMenuController {
     @GetMapping
     public List<CoffeeMenuResponse> getMenus(){
         return coffeeMenuService.getMenus();
+    }
+
+    @GetMapping("/popular")
+    public List<PopularMenuResponse> getPopularMenus() {
+        return coffeeMenuService.getPopularMenus();
     }
 }
