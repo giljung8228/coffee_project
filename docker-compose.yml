@@ -18,13 +18,17 @@ services:
     ports:
       - "18080:8080"
     environment:
-      SPRING_PROFILES_ACTIVE: "local"
+      SPRING_PROFILES_ACTIVE: "docker"
       DB_URL: "jdbc:mysql://mysql:3306/coffee_order?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true"
       DB_USERNAME: "root"
       DB_PASSWORD: "1234"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
       SERVER_PORT: "8080"
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   app2:
@@ -39,9 +43,13 @@ services:
       DB_URL: "jdbc:mysql://mysql:3306/coffee_order?serverTimezone=Asia/Seoul&characterEncoding=UTF-8&useSSL=false&allowPublicKeyRetrieval=true"
       DB_USERNAME: "root"
       DB_PASSWORD: "1234"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
       SERVER_PORT: "8080"
     depends_on:
       mysql:
+        condition: service_healthy
+      redis:
         condition: service_healthy
 
   mysql:
@@ -63,5 +71,20 @@ services:
     volumes:
       - coffee-mysql-data:/var/lib/mysql
 
+  redis:
+    image: redis:7-alpine
+    container_name: coffee-redis
+    ports:
+      - "16379:6379"
+    command: ["redis-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+    volumes:
+      - coffee-redis-data:/data
+
 volumes:
   coffee-mysql-data:
+  coffee-redis-data:
