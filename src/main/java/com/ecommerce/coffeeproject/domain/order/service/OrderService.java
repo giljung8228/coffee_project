@@ -72,4 +72,42 @@ public class OrderService {
 
         return OrderCreateResponse.of(order, point.getBalance());
     }
+
+    public OrderCreateResponse createOrderWithoutLock(OrderCreateRequest request) {
+        Member member = memberRepository.findById(request.userId())
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.USER_NOT_FOUND));
+
+        CoffeeMenu menu = coffeeMenuRepository.findById(request.menuId())
+                .orElseThrow(() -> new BusinessException(MenuErrorCode.MENU_NOT_FOUND));
+
+        if (menu.getStatus() != MenuStatus.ON_SALE) {
+            throw new BusinessException(MenuErrorCode.MENU_NOT_ON_SALE);
+        }
+
+        Point point = pointRepository.findByMemberId(member.getId())
+                .orElseThrow(() -> new BusinessException(PointErrorCode.POINT_NOT_FOUND));
+
+        point.use(menu.getPrice());
+
+        CoffeeOrder order = CoffeeOrder.createPaid(
+                member,
+                menu,
+                menu.getPrice()
+        );
+
+        coffeeOrderRepository.save(order);
+
+        PointHistory pointHistory = PointHistory.createUse(
+                member,
+                point,
+                menu.getPrice(),
+                point.getBalance()
+        );
+
+        pointHistoryRepository.save(pointHistory);
+
+        dataPlatformClient.send(OrderDataPlatformPayload.from(order));
+
+        return OrderCreateResponse.of(order, point.getBalance());
+    }
 }
