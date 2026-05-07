@@ -12,6 +12,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.UniqueConstraint;
+import jakarta.persistence.Version;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -37,6 +38,10 @@ public class Point extends BaseEntity {
 
     @Column(nullable = false)
     private Long balance;
+
+    @Version
+    @Column(nullable = false, columnDefinition = "bigint default 0")
+    private Long version = 0L;
 
     public Point(Member member) {
         this.member = member;

@@ -32,6 +32,14 @@ public class OrderService {
     private final DataPlatformClient dataPlatformClient;
 
     public OrderCreateResponse createOrder(OrderCreateRequest request) {
+        return createOrder(request, LockStrategy.PESSIMISTIC);
+    }
+
+    public OrderCreateResponse createOrderWithOptimisticLock(OrderCreateRequest request) {
+        return createOrder(request, LockStrategy.OPTIMISTIC);
+    }
+
+    private OrderCreateResponse createOrder(OrderCreateRequest request, LockStrategy lockStrategy) {
         Member member = memberRepository.findById(request.userId())
                 .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
 
@@ -42,8 +50,7 @@ public class OrderService {
             throw new IllegalArgumentException("현재 주문할 수 없는 메뉴입니다.");
         }
 
-        Point point = pointRepository.findByMemberIdWithLock(member.getId())
-                .orElseThrow(() -> new IllegalArgumentException("포인트를 먼저 충전해주세요."));
+        Point point = findPoint(member.getId(), lockStrategy);
 
         point.use(menu.getPrice());
 
@@ -64,8 +71,27 @@ public class OrderService {
 
         pointHistoryRepository.save(pointHistory);
 
+        if (lockStrategy == LockStrategy.OPTIMISTIC) {
+            pointRepository.flush();
+        }
+
         dataPlatformClient.send(OrderDataPlatformPayload.from(order));
 
         return OrderCreateResponse.of(order, point.getBalance());
+    }
+
+    private Point findPoint(Long memberId, LockStrategy lockStrategy) {
+        if (lockStrategy == LockStrategy.OPTIMISTIC) {
+            return pointRepository.findByMemberIdWithOptimisticLock(memberId)
+                    .orElseThrow(() -> new IllegalArgumentException("포인트를 먼저 충전해주세요."));
+        }
+
+        return pointRepository.findByMemberIdWithLock(memberId)
+                .orElseThrow(() -> new IllegalArgumentException("포인트를 먼저 충전해주세요."));
+    }
+
+    private enum LockStrategy {
+        PESSIMISTIC,
+        OPTIMISTIC
     }
 }

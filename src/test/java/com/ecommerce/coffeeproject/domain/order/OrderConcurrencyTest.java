@@ -71,8 +71,18 @@ class OrderConcurrencyTest {
     }
 
     @Test
-    @DisplayName("같은 사용자가 동시에 주문하면 포인트는 중복 차감되지 않는다")
-    void sameUserConcurrentOrderTest() throws InterruptedException {
+    @DisplayName("비관적 락 - 같은 사용자가 동시에 주문하면 포인트는 중복 차감되지 않는다")
+    void sameUserConcurrentOrderWithPessimisticLockTest() throws InterruptedException {
+        runConcurrentOrderTest(false);
+    }
+
+    @Test
+    @DisplayName("낙관적 락 - 같은 사용자가 동시에 주문하면 포인트는 중복 차감되지 않는다")
+    void sameUserConcurrentOrderWithOptimisticLockTest() throws InterruptedException {
+        runConcurrentOrderTest(true);
+    }
+
+    private void runConcurrentOrderTest(boolean optimisticLock) throws InterruptedException {
         int threadCount = 2;
 
         ExecutorService executorService = Executors.newFixedThreadPool(threadCount);
@@ -90,7 +100,12 @@ class OrderConcurrencyTest {
                     readyLatch.countDown();
                     startLatch.await();
 
-                    orderService.createOrder(new OrderCreateRequest(member.getId(), menu.getId()));
+                    OrderCreateRequest request = new OrderCreateRequest(member.getId(), menu.getId());
+                    if (optimisticLock) {
+                        orderService.createOrderWithOptimisticLock(request);
+                    } else {
+                        orderService.createOrder(request);
+                    }
                     successCount.incrementAndGet();
                 } catch (Exception e) {
                     failCount.incrementAndGet();
@@ -111,6 +126,7 @@ class OrderConcurrencyTest {
 
         System.out.println();
         System.out.println("========== 동시성 테스트 결과 ==========");
+        System.out.println("락 방식                 : " + (optimisticLock ? "OPTIMISTIC" : "PESSIMISTIC"));
         System.out.println("동시 주문 요청 수       : " + threadCount);
         System.out.println("성공한 주문 수          : " + successCount.get());
         System.out.println("실패한 주문 수          : " + failCount.get());
