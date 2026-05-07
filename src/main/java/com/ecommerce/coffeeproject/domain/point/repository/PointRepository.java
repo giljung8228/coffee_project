@@ -11,6 +11,8 @@ import java.util.Optional;
 
 public interface PointRepository extends JpaRepository<Point, Long> {
 
+    Optional<Point> findByMemberId(Long memberId);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select p from Point p where p.member.id = :memberId")
     Optional<Point> findByMemberIdWithLock(@Param("memberId") Long memberId);
