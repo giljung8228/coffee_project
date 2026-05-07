@@ -15,6 +15,10 @@ import com.ecommerce.coffeeproject.domain.point.entity.Point;
 import com.ecommerce.coffeeproject.domain.point.entity.PointHistory;
 import com.ecommerce.coffeeproject.domain.point.repository.PointHistoryRepository;
 import com.ecommerce.coffeeproject.domain.point.repository.PointRepository;
+import com.ecommerce.coffeeproject.global.exception.BusinessException;
+import com.ecommerce.coffeeproject.global.exception.domain.MemberErrorCode;
+import com.ecommerce.coffeeproject.global.exception.domain.MenuErrorCode;
+import com.ecommerce.coffeeproject.global.exception.domain.PointErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,17 +37,17 @@ public class OrderService {
 
     public OrderCreateResponse createOrder(OrderCreateRequest request) {
         Member member = memberRepository.findById(request.userId())
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.USER_NOT_FOUND));
 
         CoffeeMenu menu = coffeeMenuRepository.findById(request.menuId())
-                .orElseThrow(() -> new IllegalArgumentException("메뉴를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(MenuErrorCode.MENU_NOT_FOUND));
 
         if (menu.getStatus() != MenuStatus.ON_SALE) {
-            throw new IllegalArgumentException("현재 주문할 수 없는 메뉴입니다.");
+            throw new BusinessException(MenuErrorCode.MENU_NOT_ON_SALE);
         }
 
         Point point = pointRepository.findByMemberIdWithLock(member.getId())
-                .orElseThrow(() -> new IllegalArgumentException("포인트를 먼저 충전해주세요."));
+                .orElseThrow(() -> new BusinessException(PointErrorCode.POINT_NOT_FOUND));
 
         point.use(menu.getPrice());
 

@@ -8,6 +8,8 @@ import com.ecommerce.coffeeproject.domain.point.entity.Point;
 import com.ecommerce.coffeeproject.domain.point.entity.PointHistory;
 import com.ecommerce.coffeeproject.domain.point.repository.PointHistoryRepository;
 import com.ecommerce.coffeeproject.domain.point.repository.PointRepository;
+import com.ecommerce.coffeeproject.global.exception.BusinessException;
+import com.ecommerce.coffeeproject.global.exception.domain.MemberErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,7 +25,7 @@ public class PointService {
 
     public PointChargeResponse chargePoint(PointChargeRequest request) {
         Member member = memberRepository.findById(request.userId())
-                .orElseThrow(() -> new IllegalArgumentException("사용자를 찾을 수 없습니다."));
+                .orElseThrow(() -> new BusinessException(MemberErrorCode.USER_NOT_FOUND));
 
         Point point = pointRepository.findByMemberIdWithLock(member.getId())
                 .orElseGet(() -> pointRepository.save(new Point(member)));

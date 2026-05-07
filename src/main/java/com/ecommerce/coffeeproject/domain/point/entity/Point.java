@@ -2,6 +2,8 @@ package com.ecommerce.coffeeproject.domain.point.entity;
 
 import com.ecommerce.coffeeproject.domain.member.entity.Member;
 import com.ecommerce.coffeeproject.global.entity.BaseEntity;
+import com.ecommerce.coffeeproject.global.exception.BusinessException;
+import com.ecommerce.coffeeproject.global.exception.domain.PointErrorCode;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
@@ -49,7 +51,7 @@ public class Point extends BaseEntity {
 
     public void use(Long amount) {
         if (this.balance < amount) {
-            throw new IllegalArgumentException("포인트가 부족합니다.");
+            throw new BusinessException(PointErrorCode.POINT_NOT_ENOUGH);
         }
 
         this.balance -= amount;
